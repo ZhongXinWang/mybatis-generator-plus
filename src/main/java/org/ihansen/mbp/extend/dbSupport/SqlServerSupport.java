@@ -1,25 +1,22 @@
 package org.ihansen.mbp.extend.dbSupport;
 
-import java.util.List;
-
-import org.ihansen.mbp.extend.DBSupport;
 import org.mybatis.generator.api.IntrospectedColumn;
 import org.mybatis.generator.api.IntrospectedTable;
 import org.mybatis.generator.api.dom.java.Interface;
-import org.mybatis.generator.api.dom.xml.Attribute;
-import org.mybatis.generator.api.dom.xml.Document;
-import org.mybatis.generator.api.dom.xml.Element;
-import org.mybatis.generator.api.dom.xml.TextElement;
-import org.mybatis.generator.api.dom.xml.XmlElement;
+import org.mybatis.generator.api.dom.xml.*;
 
-public class SqlServerSupport implements DBSupport {
+import java.util.List;
+/**
+* SqlServer实现
+* @author Winston.Wang
+* @date 2019/8/6
+* @version 1.0
+**/
+public class SqlServerSupport implements SqlSupport {
     /**
      * 向&lt;mapper&gt;的子节点中添加内容支持批量和分页查询的sql代码块
-     *
-     * @author 吴帅
      * @parameter @param document
      * @parameter @param introspectedTable
-     * @createDate 2015年9月29日 上午10:20:11
      */
     @Override
     public void sqlDialect(Document document, IntrospectedTable introspectedTable) {
@@ -41,9 +38,6 @@ public class SqlServerSupport implements DBSupport {
         suffixIf.addElement(new TextElement("<![CDATA[) _pagination_tab WHERE _pagination_rownumber >=#{offset} and _pagination_rownumber < #{end}]]>"));
         paginationSuffixElement.addElement(suffixIf);
         parentElement.addElement(paginationSuffixElement);
-
-        // 2.增加批量插入的xml配置
-        addBatchInsertXml(document, introspectedTable);
     }
 
     /**
@@ -62,12 +56,13 @@ public class SqlServerSupport implements DBSupport {
         if (incrementField != null) {
             incrementField = incrementField.toUpperCase();
         }
-        StringBuilder dbcolumnsName = new StringBuilder();
+        StringBuilder dbColumnsName = new StringBuilder();
         StringBuilder javaPropertyAndDbType = new StringBuilder();
         for (IntrospectedColumn introspectedColumn : columns) {
             String columnName = introspectedColumn.getActualColumnName();
-            if (!columnName.toUpperCase().equals(incrementField)) {//不是自增字段的才会出现在批量插入中
-                dbcolumnsName.append(columnName + ",");
+            //不是自增字段的才会出现在批量插入中
+            if (!columnName.toUpperCase().equals(incrementField)) {
+                dbColumnsName.append(columnName + ",");
                 javaPropertyAndDbType.append("#{item." + introspectedColumn.getJavaProperty() + ",jdbcType=" + introspectedColumn.getJdbcTypeName() + "},");
             }
         }
@@ -81,7 +76,7 @@ public class SqlServerSupport implements DBSupport {
         trim1Element.addAttribute(new Attribute("prefix", "("));
         trim1Element.addAttribute(new Attribute("suffix", ")"));
         trim1Element.addAttribute(new Attribute("suffixOverrides", ","));
-        trim1Element.addElement(new TextElement(dbcolumnsName.toString()));
+        trim1Element.addElement(new TextElement(dbColumnsName.toString()));
         insertBatchElement.addElement(trim1Element);
 
         insertBatchElement.addElement(new TextElement("values"));
@@ -115,12 +110,18 @@ public class SqlServerSupport implements DBSupport {
     public XmlElement adaptSelectByExample(XmlElement element, IntrospectedTable introspectedTable) {
         //1.先取出原元素
         List<Element> elements = element.getElements();
-        Element element0 = elements.get(0);//select
-        XmlElement element1 = (XmlElement) elements.get(1);//<if test="distinct">distinct</if>
-        XmlElement element2 = (XmlElement) elements.get(2);//<include refid="Base_Column_List" />
-        Element element3 = elements.get(3);//from bus_log
-        XmlElement element4 = (XmlElement) elements.get(4);//<if test="_parameter != null"><include refid="Example_Where_Clause" /></if>
-        XmlElement element5 = (XmlElement) elements.get(5);//<if test="orderByClause != null">order by ${orderByClause}</if>
+        //select
+        Element element0 = elements.get(0);
+        //<if test="distinct">distinct</if>
+        XmlElement element1 = (XmlElement) elements.get(1);
+        //<include refid="Base_Column_List" />
+        XmlElement element2 = (XmlElement) elements.get(2);
+        //from bus_log
+        Element element3 = elements.get(3);
+        //<if test="_parameter != null"><include refid="Example_Where_Clause" /></if>
+        XmlElement element4 = (XmlElement) elements.get(4);
+        //<if test="orderByClause != null">order by ${orderByClause}</if>
+        XmlElement element5 = (XmlElement) elements.get(5);
 
         element.removeElement(0);
         element.removeElement(0);
@@ -166,24 +167,28 @@ public class SqlServerSupport implements DBSupport {
 
     /**
      * 只插入设置过的字段值,sqlserver空实现即可
-     *
-     * @author 吴帅
      * @parameter @param element
      * @parameter @param introspectedTable
-     * @createDate 2015年9月29日 下午12:00:37
      */
     @Override
     public void adaptInsertSelective(XmlElement element, IntrospectedTable introspectedTable) {
-        //todo@wus 2018/8/28 
     }
 
     @Override
     public void addSelectByBigOffsetMethod(Interface interfaze, IntrospectedTable introspectedTable) {
-        //todo@wus 2018/8/28 
+    }
+
+    @Override
+    public void addSelectByBigOffsetXml(Document document, IntrospectedTable introspectedTable) {
+
     }
 
     @Override
     public void addUpdateByOptimisticLockMethod(Interface interfaze, IntrospectedTable introspectedTable) {
-        //todo@wus 2018/8/28 
+    }
+
+    @Override
+    public void addUpdateByOptimisticLockXML(Document document, IntrospectedTable introspectedTable) {
+
     }
 }

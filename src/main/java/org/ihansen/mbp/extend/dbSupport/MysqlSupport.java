@@ -1,6 +1,5 @@
 package org.ihansen.mbp.extend.dbSupport;
 
-import org.ihansen.mbp.extend.DBSupport;
 import org.ihansen.mbp.extend.generator.*;
 import org.mybatis.generator.api.IntrospectedColumn;
 import org.mybatis.generator.api.IntrospectedTable;
@@ -11,15 +10,17 @@ import org.mybatis.generator.api.dom.xml.TextElement;
 import org.mybatis.generator.api.dom.xml.XmlElement;
 
 import java.util.List;
-
-public class MysqlSupport implements DBSupport {
+/**
+* mysql语句支持
+* @author Winston.Wang
+* @date 2019/8/4
+* @version 1.0
+**/
+public class MysqlSupport implements SqlSupport {
     /**
      * 向&lt;mapper&gt;的子节点中添加内容支持批量和分页查询的sql代码块
-     *
-     * @author 吴帅
      * @parameter @param document
      * @parameter @param introspectedTable
-     * @createDate 2015年9月29日 上午10:20:11
      */
     @Override
     public void sqlDialect(Document document, IntrospectedTable introspectedTable) {
@@ -32,16 +33,6 @@ public class MysqlSupport implements DBSupport {
         pageEnd.addElement(new TextElement("<![CDATA[ limit #{offset}, #{limit}]]>"));
         paginationSuffixElement.addElement(pageEnd);
         parentElement.addElement(paginationSuffixElement);
-
-        // 2.增加批量插入的xml配置
-        addBatchInsertXml(document, introspectedTable);
-
-        // 3.大偏移批量查询
-        AbstractXmlElementGenerator elementGenerator = new SelectByBigOffsetMysqlElementGenerator();
-        elementGenerator.addElements(document.getRootElement(),introspectedTable);
-
-        // .乐观锁更新
-        new UpdateByOptimisticLockMysqlElementGenerator().addElements(document.getRootElement(),introspectedTable);
     }
 
     /**
@@ -64,7 +55,8 @@ public class MysqlSupport implements DBSupport {
         StringBuilder javaPropertyAndDbType = new StringBuilder();
         for (IntrospectedColumn introspectedColumn : columns) {
             String columnName = introspectedColumn.getActualColumnName();
-            if (!columnName.toUpperCase().equals(incrementField)) {//不是自增字段的才会出现在批量插入中
+            //不是自增字段的才会出现在批量插入中
+            if (!columnName.toUpperCase().equals(incrementField)) {
                 dbcolumnsName.append(columnName + ",");
                 javaPropertyAndDbType.append("#{item." + introspectedColumn.getJavaProperty() + ",jdbcType=" + introspectedColumn.getJdbcTypeName() + "},");
             }
@@ -111,7 +103,7 @@ public class MysqlSupport implements DBSupport {
      */
     @Override
     public XmlElement adaptSelectByExample(XmlElement element, IntrospectedTable introspectedTable) {
-        XmlElement paginationElement = new XmlElement("include"); //$NON-NLS-1$
+        XmlElement paginationElement = new XmlElement("include");
         paginationElement.addAttribute(new Attribute("refid", "MysqlDialectSuffix"));
         element.getElements().add(paginationElement);
         return element;
@@ -130,14 +122,46 @@ public class MysqlSupport implements DBSupport {
 
     }
 
+    /**
+     * 大偏移批量查询Mapper方法
+     * @param interfaze
+     * @param introspectedTable
+     */
     @Override
     public void addSelectByBigOffsetMethod(Interface interfaze, IntrospectedTable introspectedTable) {
         AbstractJavaMapperMethodGenerator generator = new SelectByBigOffsetMethodGenerator();
         generator.addMethod(interfaze,introspectedTable);
     }
 
+    /**
+     * 大偏移批量查询Mapper.xml方法
+     * @param document
+     * @param introspectedTable
+     */
+    @Override
+    public void addSelectByBigOffsetXml(Document document, IntrospectedTable introspectedTable) {
+        AbstractXmlElementGenerator elementGenerator = new SelectByBigOffsetMysqlElementGenerator();
+        elementGenerator.addElements(document.getRootElement(),introspectedTable);
+    }
+
+    /**
+     * 添加乐观锁方法
+     * @param interfaze
+     * @param introspectedTable
+     */
     @Override
     public void addUpdateByOptimisticLockMethod(Interface interfaze, IntrospectedTable introspectedTable) {
         new UpdateByOptimisticLockMethodGenerator().addMethod(interfaze,introspectedTable);
+    }
+
+    /**
+     * 添加乐观锁xml
+     * @param document
+     * @param introspectedTable
+     */
+    @Override
+    public void addUpdateByOptimisticLockXML(Document document, IntrospectedTable introspectedTable) {
+
+        new UpdateByOptimisticLockMysqlElementGenerator().addElements(document.getRootElement(),introspectedTable);
     }
 }

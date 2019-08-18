@@ -15,9 +15,6 @@
  */
 package org.mybatis.generator.codegen.mybatis3;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.mybatis.generator.api.GeneratedJavaFile;
 import org.mybatis.generator.api.GeneratedXmlFile;
 import org.mybatis.generator.api.IntrospectedTable;
@@ -38,6 +35,9 @@ import org.mybatis.generator.codegen.mybatis3.model.RecordWithBLOBsGenerator;
 import org.mybatis.generator.codegen.mybatis3.xmlmapper.XMLMapperGenerator;
 import org.mybatis.generator.config.PropertyRegistry;
 import org.mybatis.generator.internal.ObjectFactory;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 
@@ -206,7 +206,6 @@ public class IntrospectedTableMyBatis3Impl extends IntrospectedTable {
 				answer.add(gxf);
 			}
 		}
-
 		return answer;
 	}
 

@@ -1,27 +1,24 @@
 package org.ihansen.mbp.extend.dbSupport;
 
-import java.util.List;
-import java.util.Properties;
-
-import org.ihansen.mbp.extend.DBSupport;
 import org.mybatis.generator.api.IntrospectedColumn;
 import org.mybatis.generator.api.IntrospectedTable;
 import org.mybatis.generator.api.dom.java.Interface;
-import org.mybatis.generator.api.dom.xml.Attribute;
-import org.mybatis.generator.api.dom.xml.Document;
-import org.mybatis.generator.api.dom.xml.Element;
-import org.mybatis.generator.api.dom.xml.TextElement;
-import org.mybatis.generator.api.dom.xml.XmlElement;
+import org.mybatis.generator.api.dom.xml.*;
 import org.mybatis.generator.config.TableConfiguration;
 
-public class OracleSupport implements DBSupport {
+import java.util.List;
+import java.util.Properties;
+/**
+* oracle数据库支持
+* @author Winston.Wang
+* @date 2019/8/4
+* @version 1.0
+**/
+public class OracleSupport implements SqlSupport {
     /**
      * 向&lt;mapper&gt;中子节点中添加支持批量和分页查询的sql代码块
-     *
-     * @author 吴帅
      * @parameter @param document
      * @parameter @param introspectedTable
-     * @createDate 2015年9月29日 上午10:20:11
      */
     @Override
     public void sqlDialect(Document document, IntrospectedTable introspectedTable) {
@@ -50,18 +47,12 @@ public class OracleSupport implements DBSupport {
         String tableSequenceNextval = introspectedTable.getAliasedFullyQualifiedTableNameAtRuntime() + "_SEQUENCE.nextval";
         tableSequence.addElement(new TextElement(tableSequenceNextval));
         parentElement.addElement(tableSequence);
-
-        // 4.增加批量插入的xml配置
-        addBatchInsertXml(document, introspectedTable);
     }
 
     /**
      * 生成批量插入的动态sql代码
-     *
-     * @author 吴帅
      * @parameter @param document
      * @parameter @param introspectedTable
-     * @createDate 2015年8月9日 下午6:57:43
      */
     @Override
     public void addBatchInsertXml(Document document, IntrospectedTable introspectedTable) {
@@ -72,12 +63,13 @@ public class OracleSupport implements DBSupport {
             incrementField = incrementField.toUpperCase();
         }
 
-        StringBuilder dbcolumnsName = new StringBuilder();
+        StringBuilder dbColumnsName = new StringBuilder();
         StringBuilder javaPropertyAndDbType = new StringBuilder();
         for (IntrospectedColumn introspectedColumn : columns) {
             String columnName = introspectedColumn.getActualColumnName();
-            dbcolumnsName.append(columnName + ",");
-            if (!columnName.toUpperCase().equals(incrementField)) {// 不设置id
+            dbColumnsName.append(columnName + ",");
+            // 不设置id
+            if (!columnName.toUpperCase().equals(incrementField)) {
                 javaPropertyAndDbType.append("#{item." + introspectedColumn.getJavaProperty() + ",jdbcType=" + introspectedColumn.getJdbcTypeName() + "},");
             }
         }
@@ -91,7 +83,7 @@ public class OracleSupport implements DBSupport {
         trim1Element.addAttribute(new Attribute("prefix", "("));
         trim1Element.addAttribute(new Attribute("suffix", ")"));
         trim1Element.addAttribute(new Attribute("suffixOverrides", ","));
-        trim1Element.addElement(new TextElement(dbcolumnsName.toString()));
+        trim1Element.addElement(new TextElement(dbColumnsName.toString()));
         insertBatchElement.addElement(trim1Element);
 
         insertBatchElement.addElement(new TextElement("select " + introspectedTable.getAliasedFullyQualifiedTableNameAtRuntime() + "_SEQUENCE.nextval,A.* from("));
@@ -116,19 +108,16 @@ public class OracleSupport implements DBSupport {
 
     /**
      * 向查询节点中添加分页支持
-     *
-     * @author 吴帅
      * @parameter @param element
      * @parameter @param preFixId
      * @parameter @param sufFixId
-     * @createDate 2015年9月29日 上午11:59:06
      */
     @Override
     public XmlElement adaptSelectByExample(XmlElement element, IntrospectedTable introspectedTable) {
-        XmlElement pageStart = new XmlElement("include"); //$NON-NLS-1$
+        XmlElement pageStart = new XmlElement("include");
         pageStart.addAttribute(new Attribute("refid", "OracleDialectPrefix"));
         element.getElements().add(0, pageStart);
-        XmlElement isNotNullElement = new XmlElement("include"); //$NON-NLS-1$
+        XmlElement isNotNullElement = new XmlElement("include");
         isNotNullElement.addAttribute(new Attribute("refid", "OracleDialectSuffix"));
         element.getElements().add(isNotNullElement);
         return element;
@@ -136,18 +125,16 @@ public class OracleSupport implements DBSupport {
 
     /**
      * 在单条插入动态sql中增加查询序列，以实现oracle主键自增
-     *
-     * @author 吴帅
      * @parameter @param element
      * @parameter @param introspectedTable
-     * @createDate 2015年9月29日 下午12:00:37
      */
     @Override
     public void adaptInsertSelective(XmlElement element, IntrospectedTable introspectedTable) {
         TableConfiguration tableConfiguration = introspectedTable.getTableConfiguration();
         Properties properties = tableConfiguration.getProperties();
         String incrementFieldName = properties.getProperty("incrementField");
-        if (incrementFieldName != null) {// 有自增字段的配置
+        // 有自增字段的配置
+        if (incrementFieldName != null) {
             List<Element> elements = element.getElements();
             XmlElement selectKey = new XmlElement("selectKey");
             selectKey.addAttribute(new Attribute("keyProperty", incrementFieldName));
@@ -164,11 +151,19 @@ public class OracleSupport implements DBSupport {
 
     @Override
     public void addSelectByBigOffsetMethod(Interface interfaze, IntrospectedTable introspectedTable) {
-        //todo@wus 2018/8/28
+    }
+
+    @Override
+    public void addSelectByBigOffsetXml(Document document, IntrospectedTable introspectedTable) {
+
     }
 
     @Override
     public void addUpdateByOptimisticLockMethod(Interface interfaze, IntrospectedTable introspectedTable) {
-        //todo@wus 2018/8/28
+    }
+
+    @Override
+    public void addUpdateByOptimisticLockXML(Document document, IntrospectedTable introspectedTable) {
+
     }
 }

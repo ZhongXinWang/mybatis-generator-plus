@@ -1,7 +1,16 @@
 package org.ihansen.mbp.extend;
 
-import static org.mybatis.generator.internal.util.StringUtility.stringHasValue;
-import static org.mybatis.generator.internal.util.messages.Messages.getString;
+import org.ihansen.mbp.extend.dbSupport.SqlSupport;
+import org.ihansen.mbp.extend.dbSupport.MysqlSupport;
+import org.ihansen.mbp.extend.dbSupport.OracleSupport;
+import org.ihansen.mbp.extend.dbSupport.SqlServerSupport;
+import org.mybatis.generator.api.CommentGenerator;
+import org.mybatis.generator.api.IntrospectedTable;
+import org.mybatis.generator.api.PluginAdapter;
+import org.mybatis.generator.api.dom.java.*;
+import org.mybatis.generator.api.dom.xml.Document;
+import org.mybatis.generator.api.dom.xml.XmlElement;
+import org.mybatis.generator.config.TableConfiguration;
 
 import java.util.List;
 import java.util.Properties;
@@ -9,23 +18,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
-import org.ihansen.mbp.extend.dbSupport.MysqlSupport;
-import org.ihansen.mbp.extend.dbSupport.OracleSupport;
-import org.ihansen.mbp.extend.dbSupport.SqlServerSupport;
-import org.mybatis.generator.api.CommentGenerator;
-import org.mybatis.generator.api.IntrospectedTable;
-import org.mybatis.generator.api.PluginAdapter;
-import org.mybatis.generator.api.dom.java.Field;
-import org.mybatis.generator.api.dom.java.FullyQualifiedJavaType;
-import org.mybatis.generator.api.dom.java.InnerClass;
-import org.mybatis.generator.api.dom.java.Interface;
-import org.mybatis.generator.api.dom.java.JavaVisibility;
-import org.mybatis.generator.api.dom.java.Method;
-import org.mybatis.generator.api.dom.java.Parameter;
-import org.mybatis.generator.api.dom.java.TopLevelClass;
-import org.mybatis.generator.api.dom.xml.Document;
-import org.mybatis.generator.api.dom.xml.XmlElement;
-import org.mybatis.generator.config.TableConfiguration;
+import static org.mybatis.generator.internal.util.StringUtility.stringHasValue;
+import static org.mybatis.generator.internal.util.messages.Messages.getString;
 
 /**
  * .支持oracle/mysql/sqlserver数据库分页查询<br/>
@@ -38,7 +32,7 @@ import org.mybatis.generator.config.TableConfiguration;
  */
 public class CustomPlugin extends PluginAdapter {
 	private String dbType;
-	private DBSupport dbSupport;
+	private SqlSupport sqlSupport;
 
 	/**
 	 * 修改Model类
@@ -63,14 +57,19 @@ public class CustomPlugin extends PluginAdapter {
 		builder.setVisibility(JavaVisibility.PUBLIC);
 		List<Field> fields = topLevelClass.getFields();
 		for (Field field : fields) {
-			if("serialVersionUID".equals(field.getName()))//Builder不需要序列化
-				continue;
-			builder.addField(field);
-			Method setter = new Method(field.getName());
+            //Builder不需要序列化
+			if("serialVersionUID".equals(field.getName())){
+                continue;
+            }
+
+			//Builder 不需要注解,重新设置对象
+			Field f = setField(field);
+			builder.addField(f);
+			Method setter = new Method(f.getName());
 			setter.setVisibility(JavaVisibility.PUBLIC);
 			setter.setReturnType(new FullyQualifiedJavaType("Builder"));
-			setter.addParameter(new Parameter(field.getType(), field.getName()));
-			setter.addBodyLine("this."+field.getName()+" = "+field.getName()+";");
+			setter.addParameter(new Parameter(f.getType(), f.getName()));
+			setter.addBodyLine("this."+f.getName()+" = "+f.getName()+";");
 			setter.addBodyLine("return this;");
 			builder.addMethod(setter);
 		}
@@ -79,6 +78,7 @@ public class CustomPlugin extends PluginAdapter {
 		build.setReturnType(new FullyQualifiedJavaType(topLevelClass.getType().getShortName()));
 		build.addBodyLine("return new "+topLevelClass.getType().getShortName()+"(this);");
 		builder.addMethod(build);
+		StringBuilder stringBuilder = new StringBuilder();
 		topLevelClass.addInnerClass(builder);
 		
 		//2. add constructor
@@ -87,8 +87,12 @@ public class CustomPlugin extends PluginAdapter {
 		constructor.setVisibility(JavaVisibility.PRIVATE);
 		constructor.addParameter(new Parameter(new FullyQualifiedJavaType("Builder"), "b"));
 		for (Field field : fields) {
-			if("serialVersionUID".equals(field.getName()))//Builder不需要序列化
-				continue;
+            //Builder不需要序列化
+			if("serialVersionUID".equals(field.getName())){
+
+                continue;
+
+            }
 			constructor.addBodyLine(field.getName()+" = b."+field.getName()+";");
 		}
 		topLevelClass.addMethod(constructor);
@@ -123,10 +127,10 @@ public class CustomPlugin extends PluginAdapter {
 		addDataSourceNameField(interfaze, introspectedTable);
 
 		// 3.增加大偏移批量查询方法签名
-		dbSupport.addSelectByBigOffsetMethod(interfaze, introspectedTable);
+		sqlSupport.addSelectByBigOffsetMethod(interfaze, introspectedTable);
 
 		// .增加乐观锁更新方法签名
-		dbSupport.addUpdateByOptimisticLockMethod(interfaze, introspectedTable);
+		sqlSupport.addUpdateByOptimisticLockMethod(interfaze, introspectedTable);
 
 		return super.clientGenerated(interfaze, topLevelClass, introspectedTable);
 	}
@@ -136,25 +140,25 @@ public class CustomPlugin extends PluginAdapter {
 	 */
 	@Override
 	public boolean sqlMapDocumentGenerated(Document document, IntrospectedTable introspectedTable) {
-		dbSupport.sqlDialect(document, introspectedTable);
+		sqlSupport.sqlDialect(document, introspectedTable);
 		return super.sqlMapDocumentGenerated(document, introspectedTable);
 	}
 
 	@Override
 	public boolean sqlMapSelectByExampleWithoutBLOBsElementGenerated(XmlElement element, IntrospectedTable introspectedTable) {
-		XmlElement newElement = dbSupport.adaptSelectByExample(element, introspectedTable);
+		XmlElement newElement = sqlSupport.adaptSelectByExample(element, introspectedTable);
 		return super.sqlMapUpdateByExampleWithoutBLOBsElementGenerated(newElement, introspectedTable);
 	}
 
 	@Override
 	public boolean sqlMapSelectByExampleWithBLOBsElementGenerated(XmlElement element, IntrospectedTable introspectedTable) {
-		XmlElement newElement = dbSupport.adaptSelectByExample(element, introspectedTable);
+		XmlElement newElement = sqlSupport.adaptSelectByExample(element, introspectedTable);
 		return super.sqlMapSelectByExampleWithBLOBsElementGenerated(newElement, introspectedTable);
 	}
 
 	@Override
 	public boolean sqlMapInsertSelectiveElementGenerated(XmlElement element, IntrospectedTable introspectedTable) {
-		dbSupport.adaptInsertSelective(element, introspectedTable);
+		sqlSupport.adaptInsertSelective(element, introspectedTable);
 		return super.sqlMapInsertSelectiveElementGenerated(element, introspectedTable);
 	}
 
@@ -164,19 +168,19 @@ public class CustomPlugin extends PluginAdapter {
 	@Override
 	public boolean validate(List<String> warnings) {
 
-		dbType = properties.getProperty("dbType"); //$NON-NLS-1$
+		dbType = properties.getProperty("dbType");
 
 		boolean valid1 = stringHasValue(dbType);
 		if (valid1) {
 			dbType = dbType.toUpperCase();// 忽略大小写
 			if (dbType.equals("ORACLE")) {
-				dbSupport = new OracleSupport();
+				sqlSupport = new OracleSupport();
 			}
 			else if (dbType.equals("MYSQL")) {
-				dbSupport = new MysqlSupport();
+				sqlSupport = new MysqlSupport();
 			}
 			else if (dbType.equals("SQLSERVER")) {
-				dbSupport = new SqlServerSupport();
+				sqlSupport = new SqlServerSupport();
 			}
 			else{// 不支持其他数据库
 				valid1 = false;
@@ -187,7 +191,7 @@ public class CustomPlugin extends PluginAdapter {
 		else {
 
 			if (!stringHasValue(dbType)) {
-				warnings.add(getString("ValidationError.18", "RenameExampleClassPlugin", "searchString")); //$NON-NLS-1$
+				warnings.add(getString("ValidationError.18", "RenameExampleClassPlugin", "searchString"));
 			}
 		}
 
@@ -225,7 +229,7 @@ public class CustomPlugin extends PluginAdapter {
 		else if (introspectedTable.getRules().generatePrimaryKeyClass()) {
 			paramListType = new FullyQualifiedJavaType(introspectedTable.getPrimaryKeyType());
 		} else {
-			throw new RuntimeException(getString("RuntimeError.12")); //$NON-NLS-1$  
+			throw new RuntimeException(getString("RuntimeError.12"));
 		}
 		paramType.addTypeArgument(paramListType);
 
@@ -304,6 +308,27 @@ public class CustomPlugin extends PluginAdapter {
 		field.setName("DATA_SOURCE_NAME");
 		field.setInitializationString("\"" + dataSourceName + "\"");
 		interfaze.addField(field);
+	}
+
+	/**
+	 * 设置Field字段
+	 * @param field
+	 * @return
+	 */
+	private Field setField(Field field) {
+
+		Field f = new Field();
+		f.setName(field.getName());
+		f.setType(field.getType());
+		f.setVisibility(field.getVisibility());
+		//设置注释
+		field.getJavaDocLines().stream().forEach(a->{
+
+			f.addJavaDocLine(a);
+
+		});
+
+		return f;
 	}
 
 }

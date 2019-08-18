@@ -15,29 +15,25 @@
  */
 package org.mybatis.generator.api;
 
-import static org.mybatis.generator.internal.util.ClassloaderUtility.getCustomClassloader;
-import static org.mybatis.generator.internal.util.messages.Messages.getString;
-
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import org.mybatis.generator.config.Configuration;
 import org.mybatis.generator.config.Context;
 import org.mybatis.generator.config.MergeConstants;
 import org.mybatis.generator.exception.InvalidConfigurationException;
 import org.mybatis.generator.exception.ShellException;
 import org.mybatis.generator.internal.DefaultShellCallback;
-import org.mybatis.generator.internal.ObjectFactory;
 import org.mybatis.generator.internal.NullProgressCallback;
+import org.mybatis.generator.internal.ObjectFactory;
 import org.mybatis.generator.internal.XmlFileMergerJaxp;
+
+import java.io.*;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import static org.mybatis.generator.internal.util.ClassloaderUtility.getCustomClassloader;
+import static org.mybatis.generator.internal.util.messages.Messages.getString;
 
 /**
  * This class is the main interface to MyBatis generator. A typical execution of
@@ -285,7 +281,11 @@ public class MyBatisGenerator {
             try {
                 File directory = shellCallback.getDirectory(gjf
                         .getTargetProject(), gjf.getTargetPackage());
-                targetFile = new File(directory, gjf.getFileName());
+                String fileName = gjf.getFileName();
+                if(fileName.indexOf("<") != -1){
+                    fileName = fileName.substring(0,fileName.indexOf("<"))+".java";
+                }
+                targetFile = new File(directory,fileName);
                 if (targetFile.exists()) {
                     if (shellCallback.isMergeSupported()) {
                         source = shellCallback.mergeJavaFile(gjf

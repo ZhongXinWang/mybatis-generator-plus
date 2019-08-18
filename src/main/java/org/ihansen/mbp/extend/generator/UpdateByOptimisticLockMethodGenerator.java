@@ -9,8 +9,11 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * @author wus
- */
+* 生成乐观锁方法
+* @author Winston.Wang
+* @date 2019/8/6
+* @version 1.0
+**/
 public class UpdateByOptimisticLockMethodGenerator implements AbstractJavaMapperMethodGenerator {
 
     public static final String METHOD_NAME = "updateByOptimisticLock";
@@ -35,7 +38,7 @@ public class UpdateByOptimisticLockMethodGenerator implements AbstractJavaMapper
         method.setVisibility(JavaVisibility.PUBLIC);
         method.setReturnType(FullyQualifiedJavaType.getIntInstance());
         method.setName(METHOD_NAME);
-        method.addParameter(new Parameter(parameterType, "record")); //$NON-NLS-1$
+        method.addParameter(new Parameter(parameterType, "record"));
         interfaze.addImportedTypes(importedTypes);
         interfaze.addMethod(method);
     }

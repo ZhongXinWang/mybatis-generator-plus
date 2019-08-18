@@ -6,10 +6,14 @@ import org.mybatis.generator.api.dom.xml.TextElement;
 import org.mybatis.generator.api.dom.xml.XmlElement;
 
 /**
- * @author wus
- */
+* 生成大偏移量XML
+* @author Winston.Wang
+* @date 2019/8/6
+* @version 1.0
+**/
 public class SelectByBigOffsetMysqlElementGenerator implements AbstractXmlElementGenerator {
 
+    @Override
     public void addElements(XmlElement parentElement,IntrospectedTable introspectedTable) {
         if (introspectedTable.getPrimaryKeyColumns()==null||introspectedTable.getPrimaryKeyColumns().size()!=1){
             return;
@@ -23,9 +27,9 @@ public class SelectByBigOffsetMysqlElementGenerator implements AbstractXmlElemen
         //.<if test="distinct" >
         //    distinct
         // </if>
-        XmlElement ifElement = new XmlElement("if"); //$NON-NLS-1$
-        ifElement.addAttribute(new Attribute("test", "distinct")); //$NON-NLS-1$ //$NON-NLS-2$
-        ifElement.addElement(new TextElement("distinct")); //$NON-NLS-1$
+        XmlElement ifElement = new XmlElement("if");
+        ifElement.addAttribute(new Attribute("test", "distinct"));
+        ifElement.addElement(new TextElement("distinct"));
         selectByBigOffsetElement.addElement(ifElement);
         //.<include refid="Base_Column_List" />
         XmlElement includeElement = new XmlElement("include");

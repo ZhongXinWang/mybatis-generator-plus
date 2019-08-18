@@ -83,7 +83,9 @@
     <if test="orderByClause != null" >
       order by ${orderByClause}
     </if>
-    <include refid="MysqlDialectSuffix" />
+    <include refid="
+
+" />
   </select>
   <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Long" >
     select 

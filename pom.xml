@@ -95,19 +95,24 @@
 			<version>3.1.1</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.7</version>
+		</dependency>
 	</dependencies>
 
 	<profiles>
 		<profile>
-			<id>jdk17</id>
+			<id>jdk18</id>
 			<activation>
 				<activeByDefault>true</activeByDefault>
-				<jdk>1.7</jdk>
+				<jdk>1.8</jdk>
 			</activation>
 			<properties>
-				<maven.compiler.source>1.7</maven.compiler.source>
-				<maven.compiler.target>1.7</maven.compiler.target>
-				<maven.compiler.compilerVersion>1.7</maven.compiler.compilerVersion>
+				<maven.compiler.source>1.8</maven.compiler.source>
+				<maven.compiler.target>1.8</maven.compiler.target>
+				<maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion>
 				<maven.compiler.encoding>UTF-8</maven.compiler.encoding>
 			</properties>
 		</profile>

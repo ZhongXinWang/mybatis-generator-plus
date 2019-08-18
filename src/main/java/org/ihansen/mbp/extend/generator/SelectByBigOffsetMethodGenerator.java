@@ -4,12 +4,16 @@ import org.mybatis.generator.api.IntrospectedTable;
 import org.mybatis.generator.api.dom.java.*;
 
 /**
- * @author wus
- */
+* 生成大偏移量查询
+* @author Winston.Wang
+* @date 2019/8/6
+* @version 1.0
+**/
 public class SelectByBigOffsetMethodGenerator implements AbstractJavaMapperMethodGenerator {
 
     public static final String METHOD_NAME = "selectByBigOffset";
 
+    @Override
     public void addMethod(Interface interfaze,IntrospectedTable introspectedTable) {
         Method method = new Method();
         // 1.设置方法可见性
